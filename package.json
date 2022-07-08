@@ -1,0 +1,45 @@
+{
+  "name": "experimental-next-stackbit",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index-cjs.cjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index-cjs.cjs"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      ".": [
+        "./dist"
+      ]
+    }
+  },
+  "files": [
+    "./dist/**/*.{cjs,js,ts,map}",
+    "./src",
+    "./package.json"
+  ],
+  "scripts": {
+    "build": "run build:clean && run build:ts && run prepack",
+    "build:ts": "tsc --build",
+    "dev:ts": "run build:ts --watch",
+    "build:clean": "rm -rf dist",
+    "prepack": "sed '/^export /d' dist/index-cjs.js > dist/index-cjs.cjs"
+  },
+  "dependencies": {
+    "@stackbit/dev": "^0.0.44"
+  },
+  "peerDependencies": {
+    "next": "^12"
+  },
+  "devDependencies": {
+    "next": "^12.1.6",
+    "typescript": "^4.7.4"
+  },
+  "author": "schickling",
+  "packageManager": "yarn@3.2.1"
+}
