@@ -1,6 +1,6 @@
 {
   "name": "experimental-next-stackbit",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "main": "./dist/index-cjs.cjs",
   "sideEffects": false,
@@ -34,10 +34,10 @@
     "@stackbit/dev": "^0.0.44"
   },
   "peerDependencies": {
-    "next": "^12"
+    "next": "^12 || ^13"
   },
   "devDependencies": {
-    "next": "^12.1.6",
+    "next": "^13.0.2",
     "typescript": "^4.7.4"
   },
   "author": "schickling",
