@@ -1,4 +1,4 @@
-# 2022-jul-stackbit-next-plugin
+# `experimental-next-stackbit`
 
 ## Usage
 
