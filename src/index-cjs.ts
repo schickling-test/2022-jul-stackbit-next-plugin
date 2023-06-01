@@ -1,13 +1,13 @@
 import type { NextConfig } from 'next'
-import type * as StackbitDev from '@stackbit/dev/dist/dev.js'
+import type webpack from 'webpack'
 
-type StackbitDevOptions = Parameters<typeof StackbitDev['start']>[0]
+import type { NextPluginOptions } from './plugin.js'
 
 export type { NextConfig }
 
-let devServerStarted = false
+const devServerStartedRef = { current: false }
 
-const defaultPluginOptions: StackbitDevOptions = {
+const defaultPluginOptions: NextPluginOptions = {
   rootDir: '.',
   ssgHost: 'localhost',
   ssgPort: 3000,
@@ -30,26 +30,18 @@ module.exports.defaultPluginOptions = defaultPluginOptions
  * ```
  */
 module.exports.createStackbitPlugin =
-  (stackbitDevOptions: StackbitDevOptions = defaultPluginOptions) =>
-  (nextConfig: Partial<NextConfig> = {}): Partial<NextConfig> => {
-    // could be either `next dev` or just `next`
-    const isNextDev =
-      process.argv.includes('dev') || process.argv.some((_) => _.endsWith('bin/next') || _.endsWith('bin\\next'))
-    const isBuild = process.argv.includes('build')
-
+  (pluginOptions: NextPluginOptions = defaultPluginOptions) =>
+  (nextConfig: Partial<NextConfig>) => {
     return {
       ...nextConfig,
-      // Since Next.js doesn't provide some kind of real "plugin system" we're (ab)using the `redirects` option here
-      // in order to hook into and block the `next build` and initial `next dev` run.
-      redirects: async () => {
-        const { start } = await import('@stackbit/dev/dist/dev.js')
+      webpack(config: webpack.Configuration, options: any) {
+        config.plugins!.push(new StackbitWebpackPlugin(pluginOptions))
 
-        if (isNextDev && !devServerStarted) {
-          devServerStarted = true
-          start(stackbitDevOptions)
+        if (typeof nextConfig.webpack === 'function') {
+          return nextConfig.webpack(config, options)
         }
 
-        return nextConfig.redirects?.() ?? []
+        return config
       },
     }
   }
@@ -70,3 +62,19 @@ module.exports.createStackbitPlugin =
  * ```
  */
 module.exports.withStackbit = module.exports.createStackbitPlugin(defaultPluginOptions)
+
+class StackbitWebpackPlugin {
+  constructor(readonly pluginOptions: NextPluginOptions) {}
+
+  apply(compiler: webpack.Compiler) {
+    compiler.hooks.beforeCompile.tapPromise('StackbitWebpackPlugin', async () => {
+      const { runBeforeWebpackCompile } = await import('./plugin.js')
+
+      await runBeforeWebpackCompile({
+        pluginOptions: this.pluginOptions,
+        devServerStartedRef,
+        mode: compiler.options.mode,
+      })
+    })
+  }
+}

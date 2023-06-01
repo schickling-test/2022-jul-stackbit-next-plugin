@@ -1,6 +1,6 @@
 {
   "name": "experimental-next-stackbit",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "main": "./dist/index-cjs.cjs",
   "sideEffects": false,
@@ -31,14 +31,15 @@
     "prepack": "sed '/^export /d' dist/index-cjs.js > dist/index-cjs.cjs"
   },
   "dependencies": {
-    "@stackbit/dev": "^0.0.44"
+    "@stackbit/dev": "^0.3.5"
   },
   "peerDependencies": {
     "next": "^12 || ^13"
   },
   "devDependencies": {
-    "next": "^13.0.2",
-    "typescript": "^4.7.4"
+    "next": "^13.4.4",
+    "typescript": "^5.0.4",
+    "webpack": "^5.84.1"
   },
   "author": "schickling",
   "packageManager": "yarn@3.2.1"

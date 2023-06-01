@@ -1,13 +1,12 @@
 import type { NextConfig } from 'next'
-import * as StackbitDev from '@stackbit/dev/dist/dev.js'
-
-type StackbitDevOptions = Parameters<typeof StackbitDev['start']>[0]
+import type webpack from 'webpack'
+import { NextPluginOptions, runBeforeWebpackCompile } from './plugin.js'
 
 export type { NextConfig }
 
-let devServerStarted = false
+const devServerStartedRef = { current: false }
 
-export const defaultPluginOptions: StackbitDevOptions = {
+export const defaultPluginOptions: NextPluginOptions = {
   rootDir: '.',
   ssgHost: 'localhost',
   ssgPort: 3000,
@@ -29,7 +28,7 @@ export const defaultPluginOptions: StackbitDevOptions = {
  * ```
  */
 export const createStackbitPlugin =
-  (stackbitDevOptions: StackbitDevOptions = defaultPluginOptions) =>
+  (pluginOptions: NextPluginOptions = defaultPluginOptions) =>
   (nextConfig: Partial<NextConfig> = {}): Partial<NextConfig> => {
     // could be either `next dev` or just `next`
     const isNextDev =
@@ -37,15 +36,14 @@ export const createStackbitPlugin =
 
     return {
       ...nextConfig,
-      // Since Next.js doesn't provide some kind of real "plugin system" we're (ab)using the `redirects` option here
-      // in order to hook into and block the `next build` and initial `next dev` run.
-      redirects: async () => {
-        if (isNextDev && !devServerStarted) {
-          devServerStarted = true
-          StackbitDev.start(stackbitDevOptions)
+      webpack(config: webpack.Configuration, options: any) {
+        config.plugins!.push(new StackbitWebpackPlugin(pluginOptions))
+
+        if (typeof nextConfig.webpack === 'function') {
+          return nextConfig.webpack(config, options)
         }
 
-        return nextConfig.redirects?.() ?? []
+        return config
       },
     }
   }
@@ -66,3 +64,17 @@ export const createStackbitPlugin =
  * ```
  */
 export const withStackbit = createStackbitPlugin(defaultPluginOptions)
+
+class StackbitWebpackPlugin {
+  constructor(readonly pluginOptions: NextPluginOptions) {}
+
+  apply(compiler: webpack.Compiler) {
+    compiler.hooks.beforeCompile.tapPromise('StackbitWebpackPlugin', async () => {
+      await runBeforeWebpackCompile({
+        pluginOptions: this.pluginOptions,
+        devServerStartedRef,
+        mode: compiler.options.mode,
+      })
+    })
+  }
+}
